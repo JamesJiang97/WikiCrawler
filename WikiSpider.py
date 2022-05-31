@@ -30,7 +30,9 @@ def getHtml(url) :
 
 def mkdir(title) : 
     dir = "./" + title
-    os.makedirs(title)
+    cwd = str(os.getcwd())
+    if not os.path.exists(dir) and title not in cwd :
+        os.makedirs(title)
 
 
 def getTitle(html) : 
@@ -42,19 +44,25 @@ def getTitle(html) :
 
 def saveHtml(html, title, path) :
     title = path + str(title) + ".html"
-    Html_file = open(title,"w")
-    Html_file.write(html)
-    Html_file.close
+    #print(title)
+    if not os.path.exists(title) :
+        Html_file = open(title,"w")
+        Html_file.write(html)
+        Html_file.close
 
 
 def analyzeHtml(path):
+     
     file = open(path,"rb")
     html = file.read()
     bs = bs4.BeautifulSoup(html,"html.parser")
-    li_list = bs.find_all("a", attrs = {'href':re.compile("^/wiki/%")})
+    li_list = []
+    for ul in bs.find_all("ul", class_=False) :
+        for li in ul.find_all("a", attrs = {'href':re.compile("^/wiki/%")}) :
+            li_list.append(li)
 
-    
     return li_list
+
 
 def process(title) :
     nxtdir = "./" + title
@@ -67,15 +75,17 @@ def process(title) :
             os.chdir(cwd)
             nxturl = "https://zh.wikisource.org" + item["href"]
             print(nxturl)
-            nxtitel = item["title"]
-            mkdir(nxtitel)
-            nxtdir = "./" + title +"/"
+            nxtitle = item["title"]
+            nxtitle = re.sub(r'/', "-", nxtitle)
+            print(nxtitle)
+            if str(nxtitle) in str(cwd) + title or os.path.exists(nxtitle):
+                continue
+            mkdir(nxtitle)
+            nxtdir = "./" + nxtitle +"/"
             nxthtml = getHtml(nxturl)
-            saveHtml(nxthtml, nxtitel, nxtdir)
-            process(nxtitel)
-
-
-    
+            saveHtml(nxthtml, nxtitle, nxtdir)
+            process(nxtitle)
+            
 
 
 
